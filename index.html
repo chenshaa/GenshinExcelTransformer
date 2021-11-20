@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Document</title>
+	</head>
+	<body>
+		<div class="mt-sm">
+			<input type="file" id="file" style="display:none;"
+				accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+			<a href="javascript:selectFile()">加载本地excel文件</a>
+		</div>
+	</body>
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.core.min.js"></script>
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+	<script type="text/javascript">
+		function selectFile() {
+			document.getElementById('file').click();
+		}
+
+		function readWorkbookFromLocalFile(file, callback) {
+			var reader = new FileReader();
+			reader.onload = function(e) {
+				var data = e.target.result;
+				var workbook = XLSX.read(data, {
+					type: 'binary'
+				});
+				if (callback) callback(workbook);
+			};
+			reader.readAsBinaryString(file);
+		}
+
+		function readWorkbook(workbook) {
+			var sheetNames = workbook.SheetNames; // 工作表名称集合
+			var worksheet = workbook.Sheets["角色活动祈愿"]; // 这里我们只读取第一张sheet
+			var sheet_301 = XLSX.utils.sheet_to_csv(worksheet);
+			var worksheet = workbook.Sheets["武器活动祈愿"];
+			var sheet_302 = XLSX.utils.sheet_to_csv(worksheet);
+			var worksheet = workbook.Sheets["常驻祈愿"];
+			var sheet_200 = XLSX.utils.sheet_to_csv(worksheet);
+			var worksheet = workbook.Sheets["新手祈愿"];
+			var sheet_100 = XLSX.utils.sheet_to_csv(worksheet);
+
+			var csv_main = "id,name,poolCode,star,time,type";
+			//pool_301 角色活动祈愿
+			var pool_301 = sheet_301.split(/[(\r\n)\r\n]+/);
+			for (let index = pool_301.length - 1; index >= 1; index--) {
+				if (pool_301[index] != "")
+					csv_main += "\n" + changeToStyle1(pool_301[index], "301");
+			}
+
+			//pool_302 武器活动祈愿
+			var pool_302 = sheet_302.split(/[(\r\n)\r\n]+/);
+			for (let index = pool_302.length - 1; index >= 1; index--) {
+				if (pool_302[index] != "")
+					csv_main += "\n" + changeToStyle1(pool_302[index], "302");
+			}
+
+			//pool_200 角色活动祈愿
+			var pool_200 = sheet_200.split(/[(\r\n)\r\n]+/);
+			for (let index = pool_200.length - 1; index >= 1; index--) {
+				if (pool_200[index] != "")
+					csv_main += "\n" + changeToStyle1(pool_200[index], "200");
+			}
+
+			//pool_100 角色活动祈愿
+			var pool_100 = sheet_100.split(/[(\r\n)\r\n]+/);
+			for (let index = pool_100.length - 1; index >= 1; index--) {
+				if (pool_100[index] != "")
+					csv_main += "\n" + changeToStyle1(pool_100[index], "100");
+			}
+
+			var sheet = csv2sheet(csv_main);
+			var blob = sheet2blob(sheet);
+			openDownloadDialog(blob, '导出.xlsx');
+		}
+
+		function changeToStyle1(line, poolcode) {
+			//id-name-poolcode-star-time-type
+			var oldStyle = line.split(",");
+			var newStyle = new Array("null", oldStyle[1], poolcode, oldStyle[3], oldStyle[0], oldStyle[2]);
+			return newStyle.join(",");
+		}
+
+		function csv2sheet(csv) {
+			var sheet = {}; // 将要生成的sheet
+			csv = csv.split('\n');
+			csv.forEach(function(row, i) {
+				row = row.split(',');
+				if (i == 0) sheet['!ref'] = 'A1:' + String.fromCharCode(65 + row.length - 1) + (csv.length - 1);
+				row.forEach(function(col, j) {
+					sheet[String.fromCharCode(65 + j) + (i + 1)] = {
+						v: col
+					};
+				});
+			});
+			return sheet;
+		}
+
+		function sheet2blob(sheet, sheetName) {
+			sheetName = sheetName || 'sheet1';
+			var workbook = {
+				SheetNames: [sheetName],
+				Sheets: {}
+			};
+			workbook.Sheets[sheetName] = sheet;
+			// 生成excel的配置项
+			var wopts = {
+				bookType: 'xlsx', // 要生成的文件类型
+				bookSST: false, // 是否生成Shared String Table，官方解释是，如果开启生成速度会下降，但在低版本IOS设备上有更好的兼容性
+				type: 'binary'
+			};
+			var wbout = XLSX.write(workbook, wopts);
+			var blob = new Blob([s2ab(wbout)], {
+				type: "application/octet-stream"
+			});
+			// 字符串转ArrayBuffer
+			function s2ab(s) {
+				var buf = new ArrayBuffer(s.length);
+				var view = new Uint8Array(buf);
+				for (var i = 0; i != s.length; ++i) view[i] = s.charCodeAt(i) & 0xFF;
+				return buf;
+			}
+			return blob;
+		}
+
+		function openDownloadDialog(url, saveName) {
+			if (typeof url == 'object' && url instanceof Blob) {
+				url = URL.createObjectURL(url); // 创建blob地址
+			}
+			var aLink = document.createElement('a');
+			aLink.href = url;
+			aLink.download = saveName || ''; // HTML5新增的属性，指定保存文件名，可以不要后缀，注意，file:///模式下不会生效
+			var event;
+			if (window.MouseEvent) event = new MouseEvent('click');
+			else {
+				event = document.createEvent('MouseEvents');
+				event.initMouseEvent('click', true, false, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+			}
+			aLink.dispatchEvent(event);
+		}
+
+		$(function() {
+			document.getElementById('file').addEventListener('change', function(e) {
+				var files = e.target.files;
+				if (files.length == 0) return;
+				var f = files[0];
+				if (!/\.xlsx$/g.test(f.name)) {
+					alert('仅支持读取xlsx格式！');
+					return;
+				}
+				readWorkbookFromLocalFile(f, function(workbook) {
+					readWorkbook(workbook);
+				});
+			});
+		});
+	</script>
+</html>
