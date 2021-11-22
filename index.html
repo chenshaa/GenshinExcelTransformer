@@ -33,8 +33,8 @@
 		}
 
 		function readWorkbook(workbook) {
-			var sheetNames = workbook.SheetNames; // 工作表名称集合
-			var worksheet = workbook.Sheets["角色活动祈愿"]; // 这里我们只读取第一张sheet
+			var sheetNames = workbook.SheetNames; 
+			var worksheet = workbook.Sheets["角色活动祈愿"];
 			var sheet_301 = XLSX.utils.sheet_to_csv(worksheet);
 			var worksheet = workbook.Sheets["武器活动祈愿"];
 			var sheet_302 = XLSX.utils.sheet_to_csv(worksheet);
@@ -58,14 +58,14 @@
 					csv_main += "\n" + changeToStyle1(pool_302[index], "302");
 			}
 
-			//pool_200 角色活动祈愿
+			//pool_200 常驻祈愿
 			var pool_200 = sheet_200.split(/[(\r\n)\r\n]+/);
 			for (let index = pool_200.length - 1; index >= 1; index--) {
 				if (pool_200[index] != "")
 					csv_main += "\n" + changeToStyle1(pool_200[index], "200");
 			}
 
-			//pool_100 角色活动祈愿
+			//pool_100 新手祈愿
 			var pool_100 = sheet_100.split(/[(\r\n)\r\n]+/);
 			for (let index = pool_100.length - 1; index >= 1; index--) {
 				if (pool_100[index] != "")
@@ -85,7 +85,7 @@
 		}
 
 		function csv2sheet(csv) {
-			var sheet = {}; // 将要生成的sheet
+			var sheet = {}; 
 			csv = csv.split('\n');
 			csv.forEach(function(row, i) {
 				row = row.split(',');
@@ -106,17 +106,17 @@
 				Sheets: {}
 			};
 			workbook.Sheets[sheetName] = sheet;
-			// 生成excel的配置项
+			
 			var wopts = {
-				bookType: 'xlsx', // 要生成的文件类型
-				bookSST: false, // 是否生成Shared String Table，官方解释是，如果开启生成速度会下降，但在低版本IOS设备上有更好的兼容性
+				bookType: 'xlsx', 
+				bookSST: false, 
 				type: 'binary'
 			};
 			var wbout = XLSX.write(workbook, wopts);
 			var blob = new Blob([s2ab(wbout)], {
 				type: "application/octet-stream"
 			});
-			// 字符串转ArrayBuffer
+			
 			function s2ab(s) {
 				var buf = new ArrayBuffer(s.length);
 				var view = new Uint8Array(buf);
@@ -128,11 +128,11 @@
 
 		function openDownloadDialog(url, saveName) {
 			if (typeof url == 'object' && url instanceof Blob) {
-				url = URL.createObjectURL(url); // 创建blob地址
+				url = URL.createObjectURL(url); 
 			}
 			var aLink = document.createElement('a');
 			aLink.href = url;
-			aLink.download = saveName || ''; // HTML5新增的属性，指定保存文件名，可以不要后缀，注意，file:///模式下不会生效
+			aLink.download = saveName || ''; 
 			var event;
 			if (window.MouseEvent) event = new MouseEvent('click');
 			else {
